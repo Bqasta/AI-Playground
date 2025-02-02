@@ -38,7 +38,13 @@
             <img :class="iconSizeClass" src="@/assets/svg/user-icon.svg" />
             <div class="flex flex-col gap-3 max-w-3/4">
               <p class="text-gray-300" :class="nameSizeClass">{{ languages.ANSWER_USER_NAME }}</p>
-              <div class="chat-content" v-html="util.processHTMLTag(chat.question)"></div>
+              <div class="chat-content">
+                <p>Raw Question:</p>
+                <pre>{{ chat.question }}</pre> <!-- Show raw input -->
+                <p>Processed Question:</p>
+                <pre>{{ util.processHTMLTag(chat.question) }}</pre> <!-- Show processed text -->
+              </div>
+
             </div>
           </div>
           <div class="flex items-start gap-3">
@@ -46,7 +52,13 @@
             <div
                 class="flex flex-col gap-3 bg-gray-600 rounded-md px-4 py-3 max-w-3/4 text-wrap break-words">
               <p class="text-gray-300" :class="nameSizeClass">{{ languages.ANSWER_AI_NAME }}</p>
-              <div class="ai-answer chat-content" v-html="markdownParser.parseMarkdown(chat.answer)">
+              <div class="ai-answer chat-content">
+                <p>Raw Answer:</p>
+                <pre>{{ chat.answer }}</pre> <!-- Show raw text -->
+                <p>Processed Answer:</p>
+                <pre>{{ markdownParser.parseMarkdown(chat.answer) }}</pre> <!-- Show processed text -->
+              </div>
+
               </div>
               <div class="answer-tools flex gap-3 items-center text-gray-300">
                 <button class="flex items-end" :title="languages.COM_COPY" @click="copyText">
@@ -280,7 +292,7 @@ function finishGenerate() {
 }
 
 function dataProcess(line: string) {
-  console.log(`[${util.dateFormat(new Date(), "hh:mm:ss:fff")}] LLM data: ${line}`);
+  console.log(`[${util.dateFormat(new Date(), "hh:mm:ss:fff")}] LLM data:`, data);
 
   const dataJson = line.slice(5);
   const data = JSON.parse(dataJson) as LLMOutCallback;
@@ -372,7 +384,12 @@ async function simulatedInput() {
     const newText = textOutQueue.shift()!;
     receiveOut += newText;
     // textOut.value = receiveOut;
-    textOut.value = markdownParser.parseMarkdown(receiveOut);
+    receiveOut += newText;
+    console.log("Before Markdown Parsing:", receiveOut);  // Debug log
+
+    textOut.value = receiveOut; // Bypassing markdown parser
+    console.log("After Markdown Parsing:", textOut.value);  // Debug log
+
     await nextTick();
     scrollToBottom();
   }
@@ -468,6 +485,8 @@ async function generate(chatContext: ChatItem[]) {
     textIn.value = util.escape2Html(chatContext[chatContext.length - 1].question);
     textOut.value = "";
     receiveOut = "";
+    console.log("Before Rendering - textOut:", textOut.value);
+
     firstOutput = true;
     textOutQueue.splice(0, textOutQueue.length);
     if (!abortController) {
